@@ -116,7 +116,7 @@ export class ElearningApiClient {
     listJobArtifacts(jobId: string, ifNoneMatch?: string) {
         const headers: Record<string, string> = {}
         if (ifNoneMatch) headers['If-None-Match'] = ifNoneMatch
-        return this.request<{ items: Job['artifacts']['items'] }>(`/v1/jobs/${encodeURIComponent(jobId)}/artifacts`, { headers })
+        return this.request<{ items: Array<{ id: string; type: string; filename: string; sha256?: string; sizeBytes?: number; expiresAt?: string }> }>(`/v1/jobs/${encodeURIComponent(jobId)}/artifacts`, { headers })
     }
 
     getArtifact(artifactId: string) {
