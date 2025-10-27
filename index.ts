@@ -22,4 +22,8 @@ export type { ProcessSubjectRequest } from './models/ProcessSubjectRequest';
 export type { RegisterSourceRequest } from './models/RegisterSourceRequest';
 export type { RegisterSourceResponse } from './models/RegisterSourceResponse';
 
-export { DefaultService } from './services/DefaultService';
+export { ArtifactsService } from './services/ArtifactsService';
+export { CurriculaService } from './services/CurriculaService';
+export { IngestService } from './services/IngestService';
+export { JobsService } from './services/JobsService';
+export { PlatformService } from './services/PlatformService';
