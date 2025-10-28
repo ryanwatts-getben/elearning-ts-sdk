@@ -50,7 +50,7 @@ Client Credentials grant (server-to-server):
 import fetch from 'node-fetch'
 
 async function getClientCredentialsToken() {
-  const url = 'https://learn.genixsuite.com/oauth2/token'
+  const url = 'https://learn.genixsuite.com/api/oauth2/token'
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
     scope: 'jobs:read',
@@ -76,7 +76,7 @@ Refresh Token grant:
 import fetch from 'node-fetch'
 
 async function refreshAccessToken(refreshToken: string) {
-  const url = 'https://learn.genixsuite.com/oauth2/token'
+  const url = 'https://learn.genixsuite.com/api/oauth2/token'
   const body = new URLSearchParams({
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
