@@ -1,152 +1,146 @@
-/*
-  High-level typed client wrapper for the generated SDK services.
-  Provides:
-  - Instance-based configuration (baseUrl, token resolver, headers)
-  - Optional verbose logging for requests/responses
-  - Convenience methods mirroring DefaultService with idempotency
-*/
+/**
+ * ElearningApiClient - Unified client wrapper for the GenixSuite Learn API v1
+ *
+ * Provides a simplified interface over the generated service classes, handling
+ * authentication, base URL configuration, and idempotency keys automatically.
+ *
+ * @example
+ * ```ts
+ * const client = new ElearningApiClient({
+ *   baseUrl: 'https://app.genixsuite.com',
+ *   token: process.env.API_TOKEN!,
+ *   verbose: true,
+ * })
+ *
+ * const upload = await client.createUpload({
+ *   filename: 'doc.pdf',
+ *   mimeType: 'application/pdf',
+ *   sizeBytes: 1024,
+ *   sha256: '...'
+ * }, 'idem-123')
+ * ```
+ */
 import { OpenAPI } from './core/OpenAPI';
 import { IngestService } from './services/IngestService';
 import { CurriculaService } from './services/CurriculaService';
 import { JobsService } from './services/JobsService';
 import { ArtifactsService } from './services/ArtifactsService';
+/**
+ * Unified client for the GenixSuite Learn API v1
+ */
 export class ElearningApiClient {
-    constructor(options) {
-        this.options = {
-            baseUrl: options?.baseUrl ?? OpenAPI.BASE,
-            token: options?.token,
-            withCredentials: options?.withCredentials ?? OpenAPI.WITH_CREDENTIALS,
-            credentialsMode: options?.credentialsMode ?? OpenAPI.CREDENTIALS,
-            defaultHeaders: options?.defaultHeaders ?? {},
-            verbose: options?.verbose ?? false,
-        };
-        // Initialize the shared OpenAPI config for app-wide use.
-        // Note: The generated SDK uses a singleton OpenAPI object; changes are global.
-        OpenAPI.BASE = this.options.baseUrl;
-        OpenAPI.WITH_CREDENTIALS = this.options.withCredentials;
-        OpenAPI.CREDENTIALS = this.options.credentialsMode;
-        OpenAPI.HEADERS = async () => ({ ...this.options.defaultHeaders });
-        OpenAPI.TOKEN = async () => {
-            if (typeof this.options.token === 'string')
-                return this.options.token;
-            if (typeof this.options.token === 'function') {
-                const v = await this.options.token({ path: 'dynamic', method: 'dynamic' });
-                return v ?? '';
-            }
-            return '';
-        };
-    }
-    setBaseUrl(baseUrl) {
-        this.options.baseUrl = baseUrl;
-        OpenAPI.BASE = baseUrl;
-    }
-    setToken(token) {
-        this.options.token = token;
-        OpenAPI.TOKEN = async () => {
-            if (typeof token === 'string')
-                return token;
-            if (typeof token === 'function') {
-                const v = await token({ path: 'dynamic', method: 'dynamic' });
-                return v ?? '';
-            }
-            return '';
-        };
-    }
-    setVerbose(verbose) {
-        this.options.verbose = verbose;
-    }
-    log(message, details) {
-        if (!this.options.verbose)
-            return;
-        try {
-            if (details !== undefined) {
-                // Avoid logging secrets/tokens
-                // Log a shallow clone with potential sensitive keys removed.
-                const redact = (obj) => {
-                    if (obj && typeof obj === 'object') {
-                        const shallow = {};
-                        Object.entries(obj).forEach(([k, v]) => {
-                            const lower = k.toLowerCase();
-                            if (lower.includes('authorization') || lower.includes('token') || lower.includes('secret')) {
-                                shallow[k] = '[REDACTED]';
-                            }
-                            else {
-                                shallow[k] = v;
-                            }
-                        });
-                        return shallow;
-                    }
-                    return obj;
-                };
-                // eslint-disable-next-line no-console
-                console.debug(`[sdk] ${message}`, redact(details));
-            }
-            else {
-                // eslint-disable-next-line no-console
-                console.debug(`[sdk] ${message}`);
-            }
+    constructor(config) {
+        this.config = config;
+        // Configure OpenAPI base URL
+        OpenAPI.BASE = config.baseUrl;
+        // Configure token resolver
+        if (typeof config.token === 'string') {
+            OpenAPI.TOKEN = config.token;
         }
-        catch {
-            // eslint-disable-next-line no-console
-            console.debug(`[sdk] ${message}`);
+        else {
+            OpenAPI.TOKEN = config.token;
+        }
+        if (config.verbose) {
+            // Verbose logging would be implemented here if needed
+            // For now, we rely on the underlying request library
         }
     }
-    // Ingest
+    /**
+     * Create a presigned URL for uploading a source file
+     *
+     * @param request - Upload request details
+     * @param idempotencyKey - Optional idempotency key for safe retries
+     * @returns Presigned upload URL and source ID
+     */
     async createUpload(request, idempotencyKey) {
-        this.log('createUpload: request', { request, idempotencyKey });
-        const result = await IngestService.createUpload(request, idempotencyKey);
-        this.log('createUpload: response', result);
-        return result;
+        return IngestService.createUpload(request, idempotencyKey);
     }
+    /**
+     * Register a previously uploaded object as a Source for processing
+     *
+     * @param request - Source registration details
+     * @returns Registered source details with AV status
+     */
     async registerSource(request) {
-        this.log('registerSource: request', { request });
-        const result = await IngestService.registerSource(request);
-        this.log('registerSource: response', result);
-        return result;
+        return IngestService.registerSource(request);
     }
-    // Curricula and exports
+    /**
+     * Create and validate a curriculum definition
+     *
+     * @param request - Curriculum creation request
+     * @returns Created curriculum ID
+     */
     async createCurriculum(request) {
-        this.log('createCurriculum: request', { request });
-        const result = await CurriculaService.createCurriculum(request);
-        this.log('createCurriculum: response', result);
-        return result;
+        return CurriculaService.createCurriculum(request);
     }
-    async createExport(request) {
-        this.log('createExport: request', { request });
-        const result = await JobsService.createExport(request);
-        this.log('createExport: response', result);
-        return result;
-    }
-    // Orchestration
+    /**
+     * Single-call endpoint to process a subject and generate outputs asynchronously
+     *
+     * @param request - Subject processing request with sources and outputs
+     * @param idempotencyKey - Optional idempotency key for safe retries
+     * @returns Job acceptance details with job ID and status URL
+     */
     async processSubject(request, idempotencyKey) {
-        this.log('processSubject: request', { request, idempotencyKey });
-        const result = await JobsService.processSubject(request, idempotencyKey);
-        this.log('processSubject: response', result);
-        return result;
+        return JobsService.processSubject(request, idempotencyKey);
     }
-    // Jobs and artifacts
+    /**
+     * Create an export job from a subject or curriculum
+     *
+     * @param request - Export job request (prefer subjectId for full capabilities)
+     * @returns Job acceptance details with job ID and status URL
+     *
+     * @example
+     * ```ts
+     * // Export from subject (preferred - supports all output types)
+     * await client.createExport({
+     *   subjectId: '550e8400-e29b-41d4-a716-446655440000',
+     *   outputs: ['pptx', 'pdf', 'jira']
+     * })
+     *
+     * // Export from curriculum (structured schema format)
+     * await client.createExport({
+     *   curriculumId: 'abc123',
+     *   outputs: ['pptx']
+     * })
+     * ```
+     */
+    async createExport(request) {
+        return JobsService.createExport(request);
+    }
+    /**
+     * Get the current status and progress of a job
+     *
+     * @param jobId - Job identifier
+     * @returns Job status, progress, stage, and artifacts
+     */
     async getJob(jobId) {
-        this.log('getJob: request', { jobId });
-        const result = await JobsService.getJob(jobId);
-        this.log('getJob: response', result);
-        return result;
+        return JobsService.getJob(jobId);
     }
+    /**
+     * Request cancellation of a queued or running job
+     *
+     * @param jobId - Job identifier to cancel
+     * @returns Correlation ID for the cancellation request
+     */
     async cancelJob(jobId) {
-        this.log('cancelJob: request', { jobId });
-        const result = await JobsService.cancelJob(jobId);
-        this.log('cancelJob: response', result);
-        return result;
+        return JobsService.cancelJob(jobId);
     }
-    async listJobArtifacts(jobId, ifNoneMatch) {
-        this.log('listJobArtifacts: request', { jobId, ifNoneMatch });
-        const result = await JobsService.listArtifacts(jobId, ifNoneMatch);
-        this.log('listJobArtifacts: response', result);
-        return result;
+    /**
+     * List artifacts produced by a job
+     *
+     * @param jobId - Job identifier
+     * @returns List of artifacts with metadata
+     */
+    async listJobArtifacts(jobId) {
+        return JobsService.listArtifacts(jobId);
     }
+    /**
+     * Get a temporary download URL for an artifact
+     *
+     * @param artifactId - Artifact identifier
+     * @returns Download URL and expiration time
+     */
     async getArtifact(artifactId) {
-        this.log('getArtifact: request', { artifactId });
-        const result = await ArtifactsService.getArtifact(artifactId);
-        this.log('getArtifact: response', result);
-        return result;
+        return ArtifactsService.getArtifact(artifactId);
     }
 }

@@ -11,14 +11,14 @@ import { ElearningApiClient } from './index'
 
 // Option A: static bearer token (e.g., client_credentials or SSO access token)
 const client = new ElearningApiClient({
-  baseUrl: 'https://learn.genixsuite.com',
+  baseUrl: 'https://app.genixsuite.com',
   token: process.env.API_TOKEN!,
   verbose: true,
 })
 
 // Option B: async token resolver (rotate/refresh as needed)
 // const client = new ElearningApiClient({
-//   baseUrl: 'https://learn.genixsuite.com',
+//   baseUrl: 'https://app.genixsuite.com',
 //   token: async () => {
 //     return process.env.API_TOKEN
 //   },
@@ -30,16 +30,23 @@ const upload = await client.createUpload({ filename: 'doc.pdf', mimeType: 'appli
 // Step 2: register source
 await client.registerSource({ sourceId: upload.sourceId, filename: 'doc.pdf', mimeType: 'application/pdf', sizeBytes: 1024, sha256: '...' }, 'idem-123')
 
-// Single-POST orchestration
-const job = await client.processSubject({ subject: { title: 'Safety Training' }, outputs: ['pptx'] }, 'idem-456')
+// Single-POST orchestration (creates subject and starts export job)
+const job = await client.processSubject({ subject: { title: 'Safety Training' }, outputs: ['pptx', 'pdf'] }, 'idem-456')
 
-// Poll job
-const status = await client.getJob(job.jobId)
+// Export from existing subject (supports all output types: pptx, pdf, jira, confluence, image, video)
+const exportJob = await client.createExport({
+  subjectId: '550e8400-e29b-41d4-a716-446655440000',
+  outputs: ['pptx', 'pdf', 'jira'],
+  options: { includeImages: true }
+})
 
-// List artifacts
-const artifacts = await client.listJobArtifacts(job.jobId)
+// Poll job status
+const status = await client.getJob(exportJob.jobId)
 
-// Download link
+// List artifacts when job completes
+const artifacts = await client.listJobArtifacts(exportJob.jobId)
+
+// Download artifact
 const link = await client.getArtifact(artifacts.items[0].id)
 ```
 
@@ -50,7 +57,7 @@ Client Credentials grant (server-to-server):
 import fetch from 'node-fetch'
 
 async function getClientCredentialsToken() {
-  const url = 'https://learn.genixsuite.com/api/oauth2/token'
+  const url = 'https://app.genixsuite.com/api/oauth2/token'
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
     scope: 'jobs:read',
@@ -68,7 +75,7 @@ async function getClientCredentialsToken() {
 }
 
 const token = await getClientCredentialsToken()
-const client = new ElearningApiClient({ baseUrl: 'https://learn.genixsuite.com', token })
+const client = new ElearningApiClient({ baseUrl: 'https://app.genixsuite.com', token })
 ```
 
 Refresh Token grant:
@@ -76,7 +83,7 @@ Refresh Token grant:
 import fetch from 'node-fetch'
 
 async function refreshAccessToken(refreshToken: string) {
-  const url = 'https://learn.genixsuite.com/api/oauth2/token'
+  const url = 'https://app.genixsuite.com/api/oauth2/token'
   const body = new URLSearchParams({
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
@@ -93,9 +100,13 @@ async function refreshAccessToken(refreshToken: string) {
 
 Environment and settings
 
-- issuer: `https://learn.genixsuite.com`
+- base URL: `https://app.genixsuite.com` (production)
+- issuer: `https://app.genixsuite.com`
 - audience: `elearning-api`
+- token endpoint: `https://app.genixsuite.com/api/oauth2/token`
 - access tokens are short-lived; use refresh or client credentials for server jobs
+
+Note: The domain `learn.genixsuite.com` may be used for specific partner integrations or staging environments. Use `app.genixsuite.com` for standard API access.
 
 Notes
 

@@ -6,7 +6,7 @@ export class ArtifactsService {
      * Lists artifacts produced by a job. Use ETag/If-None-Match to poll efficiently.
      * Notes:
      * - On 304 Not Modified, re-use your cached artifact list.
-     * - Each artifact’s `id` can be resolved to a download URL via `GET /v1/artifacts/{artifactId}`.
+     * - Each artifact's `id` can be resolved to a download URL via `GET /api/v1/artifacts/{artifactId}`.
      * @param jobId
      * @param ifNoneMatch
      * @returns ArtifactList Artifacts
@@ -15,7 +15,7 @@ export class ArtifactsService {
     static listArtifacts(jobId, ifNoneMatch) {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/v1/jobs/{jobId}/artifacts',
+            url: '/api/v1/jobs/{jobId}/artifacts',
             path: {
                 'jobId': jobId,
             },
@@ -44,7 +44,7 @@ export class ArtifactsService {
     static getArtifact(artifactId) {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/v1/artifacts/{artifactId}',
+            url: '/api/v1/artifacts/{artifactId}',
             path: {
                 'artifactId': artifactId,
             },

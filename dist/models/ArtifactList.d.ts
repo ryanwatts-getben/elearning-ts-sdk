@@ -5,9 +5,11 @@ export type ArtifactList = {
          */
         id?: string;
         /**
-         * Artifact type (pptx, pdf, txt, video).
+         * Artifact type. Supported types: pptx, pdf, txt, video, jira, confluence, image.
+         * See `/api/v1/exports` for details on each type.
+         *
          */
-        type?: string;
+        type?: 'pptx' | 'pdf' | 'txt' | 'video' | 'jira' | 'confluence' | 'image';
         /**
          * Suggested download filename.
          */

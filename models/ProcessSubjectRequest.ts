@@ -18,9 +18,10 @@ export type ProcessSubjectRequest = {
         url?: string;
     }>;
     /**
-     * Output formats to generate.
+     * Output formats to generate. See `/api/v1/exports` for full list and capabilities per format.
+     *
      */
-    outputs: Array<'pptx' | 'pdf' | 'txt' | 'video'>;
+    outputs: Array<'pptx' | 'pdf' | 'txt' | 'video' | 'jira' | 'confluence' | 'image'>;
     webhook?: {
         /**
          * Callback URL to receive job status updates.

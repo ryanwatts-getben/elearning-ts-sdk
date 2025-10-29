@@ -7,7 +7,7 @@ export declare class ArtifactsService {
      * Lists artifacts produced by a job. Use ETag/If-None-Match to poll efficiently.
      * Notes:
      * - On 304 Not Modified, re-use your cached artifact list.
-     * - Each artifact’s `id` can be resolved to a download URL via `GET /v1/artifacts/{artifactId}`.
+     * - Each artifact's `id` can be resolved to a download URL via `GET /api/v1/artifacts/{artifactId}`.
      * @param jobId
      * @param ifNoneMatch
      * @returns ArtifactList Artifacts

@@ -1,5 +1,5 @@
 export const OpenAPI = {
-    BASE: 'https://learn.genixsuite.com',
+    BASE: 'https://app.genixsuite.com',
     VERSION: '1.0.0',
     WITH_CREDENTIALS: false,
     CREDENTIALS: 'include',
