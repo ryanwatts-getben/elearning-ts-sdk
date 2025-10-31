@@ -65,5 +65,8 @@
         "access": "public"
     },
     "module": "dist/index.js",
-    "sideEffects": false
+    "sideEffects": false,
+    "dependencies": {
+        "sdk-ts": "^1.0.0"
+    }
 }
