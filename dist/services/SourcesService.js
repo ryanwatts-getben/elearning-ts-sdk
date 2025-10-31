@@ -2,17 +2,19 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class SourcesService {
     /**
-     * Create pre-signed URL for uploading a source file
-     * Issues a short-lived, single-use pre-signed URL (and optional POST form fields) for direct upload to storage.
-     * Notes:
-     * - Idempotent with Idempotency-Key: reuse the same key and identical body to receive the same result.
-     * - Validate payload before calling; `sha256` must be a 64-character hex digest.
-     * - Maximum `sizeBytes` is enforced (see schema). If exceeded, server returns 413.
-     * - On success, use `uploadUrl` (and `fields` if present) to perform a browser/server upload.
+     * Create pre-signed upload URL
+     * Issues a short-lived pre-signed URL (and form fields) for direct file upload to storage.
+     * Clients can upload a file directly to the storage bucket using the returned URL and fields.
+     * **Notes:**
+     * - Idempotent: if an `Idempotency-Key` header is provided, sending the same request body with the same key will return the same upload URL and `sourceId` (avoid duplicate uploads).
+     * - The `sha256` field must be a 64-character hexadecimal string (content hash).
+     * - Maximum allowed `sizeBytes` is 1 GiB; larger values result in 413 Payload Too Large.
+     * - On success, use the `uploadUrl` and `fields` in a standard HTML form POST (or simulated form upload) to actually upload the file.
      * @param requestBody
-     * @param idempotencyKey A unique key to make unsafe operations idempotent. Reuse the same key with an identical
-     * request body to safely retry without creating duplicate resources. Keys may be reused after 24h.
-     * @returns CreateUploadResponse Created
+     * @param idempotencyKey An idempotency key to ensure a POST request is executed only once.
+     * If the same key is reused with an identical request body, the server will return the original result instead of creating a duplicate resource.
+     * The key should be unique per distinct operation attempt.
+     * @returns CreateUploadResponse Pre-signed URL created
      * @throws ApiError
      */
     static createUpload(requestBody, idempotencyKey) {
@@ -25,35 +27,43 @@ export class SourcesService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `RFC7807 Problem Details`,
-                401: `RFC7807 Problem Details`,
-                403: `RFC7807 Problem Details`,
-                413: `RFC7807 Problem Details`,
+                400: `Error response (Problem Details)`,
+                401: `Error response (Problem Details)`,
+                403: `Error response (Problem Details)`,
+                413: `Payload too large (file size exceeds allowed maximum)`,
                 429: `Rate limit exceeded`,
             },
         });
     }
     /**
-     * Register an uploaded source for later processing
-     * Registers a previously uploaded object (from a pre-signed request) as a Source for downstream processing.
-     * Notes:
-     * - Provide the `sourceId` returned by the upload creation step.
-     * - Optional metadata (filename, mimeType, sizeBytes, sha256) can be supplied to enrich the record.
-     * - The Source becomes eligible for jobs (e.g., `processSubject`).
+     * Register an uploaded source
+     * Registers a previously uploaded file as a content **Source** for processing. This step finalizes the ingestion:
+     * it validates and records the uploaded object so it can be referenced in learning content or export jobs.
+     * **Notes:**
+     * - Provide the exact `sourceId` obtained from the upload step. The sourceId is prefixed with your client identifier (e.g., `ci_12345/...`).
+     * - You may override metadata (filename, mimeType, sizeBytes, sha256) if different from the original upload; otherwise those fields are optional.
+     * - After registration, the source is eligible to be used in subject processing or curriculum export jobs.
      * @param requestBody
-     * @returns RegisterSourceResponse Created
+     * @param idempotencyKey An idempotency key to ensure a POST request is executed only once.
+     * If the same key is reused with an identical request body, the server will return the original result instead of creating a duplicate resource.
+     * The key should be unique per distinct operation attempt.
+     * @returns RegisterSourceResponse Source registered
      * @throws ApiError
      */
-    static registerSource(requestBody) {
+    static registerSource(requestBody, idempotencyKey) {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/ingest/sources',
+            headers: {
+                'Idempotency-Key': idempotencyKey,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `RFC7807 Problem Details`,
-                401: `RFC7807 Problem Details`,
-                403: `RFC7807 Problem Details`,
+                400: `Error response (Problem Details)`,
+                401: `Error response (Problem Details)`,
+                403: `Error response (Problem Details)`,
+                409: `Conflict – e.g., the source is not yet virus-scanned or was flagged`,
                 429: `Rate limit exceeded`,
             },
         });

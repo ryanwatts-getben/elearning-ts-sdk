@@ -1,29 +1,30 @@
 export type ArtifactList = {
+    /**
+     * List of artifacts produced by the job.
+     */
     items: Array<{
         /**
          * Artifact identifier.
          */
         id?: string;
         /**
-         * Artifact type. Supported types: pptx, pdf, txt, video, jira, confluence, image.
-         * See `/api/v1/exports` for details on each type.
-         *
+         * Artifact type/format.
          */
         type?: 'pptx' | 'pdf' | 'txt' | 'video' | 'jira' | 'confluence' | 'image';
         /**
-         * Suggested download filename.
+         * Suggested filename for download (typically includes the appropriate extension).
          */
         filename?: string;
         /**
-         * Optional hex-encoded content digest.
+         * SHA-256 checksum of the artifact content (if available).
          */
         sha256?: string;
         /**
-         * Optional artifact size in bytes.
+         * Size of the artifact file in bytes (if available).
          */
         sizeBytes?: number;
         /**
-         * When the artifact will expire and be deleted.
+         * Timestamp when the artifact will expire from storage (if applicable).
          */
         expiresAt?: string;
     }>;

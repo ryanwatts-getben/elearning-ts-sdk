@@ -2,126 +2,101 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class JobsService {
     /**
-     * Create an export job from a curriculum
-     * Starts an asynchronous export job for a curriculum. Returns a `JobAccepted` response with the job ID.
-     * Notes:
-     * - Use the `Location` header or `statusUrl` to poll job status.
-     * - Multiple outputs can be requested (e.g., `pptx`, `pdf`). Artifacts are retrievable once the job succeeds.
-     * @param requestBody
-     * @returns JobAccepted Accepted; job created
+     * Get job status
+     * Retrieves the current status and progress of a job. Clients should poll this endpoint to determine when a job finishes (or fails), and to get progress updates.
+     * **Notes:**
+     * - `status` progresses through states: **queued** → **running** → **succeeded** (or **failed** or **canceled**).
+     * - `progress` is a percentage (0-100) estimation of completion.
+     * - `stage` is a high-level label of the current phase (e.g., "processing", "exporting").
+     * - If `status` is `succeeded`, the `artifacts` list will be populated with output references.
+     * - If `status` is `failed`, an `error` object (Problem Details) will be included with more information.
+     * @param jobId Job identifier.
+     * @returns Job Current job status
      * @throws ApiError
      */
-    static createExport(requestBody) {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/v1/exports',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `RFC7807 Problem Details`,
-                401: `RFC7807 Problem Details`,
-                403: `RFC7807 Problem Details`,
-                429: `Rate limit exceeded`,
-            },
-        });
-    }
-    /**
-     * Single-call ingest and generate outputs asynchronously
-     * Convenience endpoint that accepts a subject with optional sources and immediately creates an export job.
-     * Notes:
-     * - Idempotent with Idempotency-Key to avoid duplicate jobs on retry.
-     * - Each source must specify either `sourceId` (from a prior upload/registration) or a `url` to fetch.
-     * - Use `webhook` to receive job updates via callback.
-     * @param requestBody
-     * @param idempotencyKey A unique key to make unsafe operations idempotent. Reuse the same key with an identical
-     * request body to safely retry without creating duplicate resources. Keys may be reused after 24h.
-     * @returns JobAccepted Accepted; job created
-     * @throws ApiError
-     */
-    static processSubject(requestBody, idempotencyKey) {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/v1/subjects/process',
-            headers: {
-                'Idempotency-Key': idempotencyKey,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `RFC7807 Problem Details`,
-                401: `RFC7807 Problem Details`,
-                403: `RFC7807 Problem Details`,
-                429: `Rate limit exceeded`,
-            },
-        });
-    }
-    /**
-     * Get job status and progress
-     * Polls the current state of a job. Use `status`, `progress`, and `stage` to drive client UX.
-     * Notes:
-     * - `status` transitions: queued → running → succeeded/failed/canceled.
-     * - `artifacts` are populated upon success.
-     * - `error` contains an RFC7807 object when the job fails.
-     * @param jobId
-     * @returns Job Job status
-     * @throws ApiError
-     */
-    static getJob(jobId) {
+    static getJobStatus(jobId) {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/v1/jobs/{jobId}',
+            url: '/api/v1/jobs/{jobId}',
             path: {
                 'jobId': jobId,
             },
             errors: {
-                401: `RFC7807 Problem Details`,
-                403: `RFC7807 Problem Details`,
-                404: `RFC7807 Problem Details`,
+                401: `Error response (Problem Details)`,
+                403: `Error response (Problem Details)`,
+                404: `Error response (Problem Details)`,
                 429: `Rate limit exceeded`,
             },
         });
     }
     /**
-     * Request cancellation of a job
-     * Requests cooperative cancellation of a queued or running job. Some jobs may already be terminal or non-cancelable.
-     * Notes:
-     * - Returns 202 on acceptance; the job will transition to `canceled` shortly thereafter.
-     * - Returns 409 if the job is in a terminal state or cannot be canceled.
-     * @param jobId
+     * Cancel a job
+     * Requests cancellation of a running or queued job. This is a best-effort attempt: the job may still complete if it is near completion or if cancellation is not supported at the current stage.
+     * **Notes:**
+     * - Returns **202 Accepted** if the cancellation request was received. The job’s status will shortly transition to `canceled` if it wasn’t already finished.
+     * - Returns **409 Conflict** if the job is already in a terminal state (succeeded/failed/canceled) or cannot be canceled.
+     * @param jobId Job identifier.
      * @returns string Cancellation requested
      * @throws ApiError
      */
-    static cancelJob(jobId) {
+    static cancelJob(jobId, idempotencyKey) {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/v1/jobs/{jobId}/cancel',
+            url: '/api/v1/jobs/{jobId}/cancel',
             path: {
                 'jobId': jobId,
             },
+            headers: {
+                'Idempotency-Key': idempotencyKey,
+            },
             responseHeader: 'X-Correlation-Id',
             errors: {
-                401: `RFC7807 Problem Details`,
-                403: `RFC7807 Problem Details`,
-                409: `RFC7807 Problem Details`,
+                401: `Error response (Problem Details)`,
+                403: `Error response (Problem Details)`,
+                404: `Error response (Problem Details)`,
+                409: `Conflict – job cannot be canceled (already finished or ineligible)`,
                 429: `Rate limit exceeded`,
             },
         });
     }
     /**
-     * List job artifacts
-     * Lists artifacts produced by a job. Use ETag/If-None-Match to poll efficiently.
-     * Notes:
-     * - On 304 Not Modified, re-use your cached artifact list.
-     * - Each artifact’s `id` can be resolved to a download URL via `GET /v1/artifacts/{artifactId}`.
-     * @param jobId
-     * @param ifNoneMatch
-     * @returns ArtifactList Artifacts
+     * Mark job as complete (internal)
+     * **Internal endpoint:** Marks a job as completed successfully. This is used by internal services once the job’s outputs are ready to be finalized.
+     * Clients should not call this endpoint directly. Requires an internal service scope.
+     * @param jobId Job identifier.
+     * @returns any Job marked as complete
      * @throws ApiError
      */
-    static listArtifacts(jobId, ifNoneMatch) {
+    static completeJob(jobId) {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/jobs/{jobId}/complete',
+            path: {
+                'jobId': jobId,
+            },
+            errors: {
+                401: `Error response (Problem Details)`,
+                403: `Error response (Problem Details)`,
+                404: `Error response (Problem Details)`,
+                409: `Conflict – job already completed or in terminal state`,
+            },
+        });
+    }
+    /**
+     * List artifacts for a job
+     * Lists all output artifacts generated by a completed job. Clients can use this to retrieve artifact IDs and metadata, then fetch each artifact's download URL.
+     * **Notes:**
+     * - Supports conditional requests: include an `If-None-Match` header with a previously returned ETag to avoid re-fetching unchanged data. A **304 Not Modified** will be returned if nothing changed.
+     * - Each artifact entry includes an `id` which can be used with `GET /api/v1/artifacts/{artifactId}` to get a temporary download link.
+     * @param jobId Job identifier.
+     * @param ifNoneMatch An ETag from a previous response to conditionally fetch (for caching).
+     * @returns ArtifactList Artifact list
+     * @throws ApiError
+     */
+    static listJobArtifacts(jobId, ifNoneMatch) {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/v1/jobs/{jobId}/artifacts',
+            url: '/api/v1/jobs/{jobId}/artifacts',
             path: {
                 'jobId': jobId,
             },
@@ -129,10 +104,10 @@ export class JobsService {
                 'If-None-Match': ifNoneMatch,
             },
             errors: {
-                304: `Not Modified`,
-                401: `RFC7807 Problem Details`,
-                403: `RFC7807 Problem Details`,
-                404: `RFC7807 Problem Details`,
+                304: `Not Modified (artifact list unchanged since last ETag)`,
+                401: `Error response (Problem Details)`,
+                403: `Error response (Problem Details)`,
+                404: `Error response (Problem Details)`,
                 429: `Rate limit exceeded`,
             },
         });

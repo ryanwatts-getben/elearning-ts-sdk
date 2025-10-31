@@ -1,7 +1,7 @@
 export var Job;
 (function (Job) {
     /**
-     * Current lifecycle state.
+     * Current status of the job.
      */
     let status;
     (function (status) {

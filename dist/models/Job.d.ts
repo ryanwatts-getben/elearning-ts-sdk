@@ -6,31 +6,34 @@ export type Job = {
      */
     id: string;
     /**
-     * Current lifecycle state.
+     * Current status of the job.
      */
     status: Job.status;
     /**
-     * Best-effort completion percentage.
+     * Progress percentage (0-100) if applicable.
      */
     progress?: number;
     /**
-     * High-level phase label (e.g., ingesting, processing, exporting). Values are implementation-defined.
+     * High-level stage of execution (e.g., "ingesting", "processing", "exporting").
      */
     stage?: string;
     /**
-     * When the job was submitted.
+     * Timestamp when the job was submitted.
      */
     submittedAt: string;
     /**
-     * Last status update time.
+     * Timestamp of the last status update.
      */
     updatedAt?: string;
     artifacts?: ArtifactList;
+    /**
+     * If the job failed, this object provides error details.
+     */
     error?: Problem;
 };
 export declare namespace Job {
     /**
-     * Current lifecycle state.
+     * Current status of the job.
      */
     enum status {
         QUEUED = "queued",

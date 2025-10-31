@@ -1,10 +1,10 @@
 export type JobAccepted = {
     /**
-     * Identifier of the newly created job.
+     * Identifier of the job that was created and queued.
      */
     jobId: string;
     /**
-     * Relative or absolute URL to poll job status.
+     * Relative URL to query the job status (GET request).
      */
     statusUrl: string;
 };

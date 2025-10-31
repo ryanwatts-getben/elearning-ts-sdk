@@ -3,7 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * A unique key to make unsafe operations idempotent. Reuse the same key with an identical
- * request body to safely retry without creating duplicate resources. Keys may be reused after 24h.
+ * An idempotency key to ensure a POST request is executed only once.
+ * If the same key is reused with an identical request body, the server will return the original result instead of creating a duplicate resource.
+ * The key should be unique per distinct operation attempt.
  */
 export type IdempotencyKey = string;

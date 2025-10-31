@@ -4,23 +4,23 @@
 /* eslint-disable */
 export type CreateUploadRequest = {
     /**
-     * Original file name (used for content-disposition and UX hints).
+     * Original file name (including extension).
      */
     filename: string;
     /**
-     * IANA media type of the file to be uploaded.
+     * MIME type of the file. Must be an allowed type and should match the file extension.
      */
     mimeType: string;
     /**
-     * Declared file size in bytes. Enforced server-side.
+     * Size of the file in bytes. Uploads exceeding configured limits will be rejected.
      */
     sizeBytes: number;
     /**
-     * Lower/upper-case hex-encoded SHA-256 content digest of the file.
+     * Hex-encoded SHA-256 hash of the file content, for integrity verification.
      */
     sha256: string;
     /**
-     * Optional region hint for storage placement.
+     * Optional Region hint for upload (not usually needed; the upload will target the server’s default region).
      */
     region?: string;
 };

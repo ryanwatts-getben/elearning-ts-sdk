@@ -36,9 +36,10 @@ export declare class ElearningApiClient {
      * Register a previously uploaded object as a Source for processing
      *
      * @param request - Source registration details
+     * @param idempotencyKey - Optional idempotency key for safe retries
      * @returns Registered source details with AV status
      */
-    registerSource(request: RegisterSourceRequest): Promise<RegisterSourceResponse>;
+    registerSource(request: RegisterSourceRequest, idempotencyKey?: string): Promise<RegisterSourceResponse>;
     /**
      * Create and validate a curriculum definition
      *
@@ -94,16 +95,15 @@ export declare class ElearningApiClient {
      * Request cancellation of a queued or running job
      *
      * @param jobId - Job identifier to cancel
-     * @returns Correlation ID for the cancellation request
      */
-    cancelJob(jobId: string): Promise<string>;
+    cancelJob(jobId: string, idempotencyKey?: string): Promise<string>;
     /**
      * List artifacts produced by a job
      *
      * @param jobId - Job identifier
      * @returns List of artifacts with metadata
      */
-    listJobArtifacts(jobId: string): Promise<ArtifactList>;
+    listJobArtifacts(jobId: string, ifNoneMatch?: string): Promise<ArtifactList>;
     /**
      * Get a temporary download URL for an artifact
      *

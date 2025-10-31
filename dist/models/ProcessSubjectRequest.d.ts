@@ -1,30 +1,44 @@
 export type ProcessSubjectRequest = {
+    /**
+     * A lightweight subject definition to process.
+     */
     subject: {
         /**
-         * Title of the subject to generate outputs for.
+         * Title of the subject.
          */
         title: string;
         /**
-         * Generation options (implementation-defined).
+         * Generation options for the subject content (if any; structure may vary).
          */
         options?: Record<string, any>;
     };
+    /**
+     * Optional Content sources to be ingested as part of the subject. Each must have either a `sourceId` or a direct `url`.
+     */
     sources?: Array<{
+        /**
+         * Reference to a previously registered source to include.
+         */
         sourceId?: string;
+        /**
+         * URL of external content to fetch and include.
+         */
         url?: string;
     }>;
     /**
-     * Output formats to generate. See `/api/v1/exports` for full list and capabilities per format.
-     *
+     * One or more output formats to generate from the subject. (*For full list of output types, use the `/api/v1/exports` endpoint on a pre-created subject.*)
      */
-    outputs: Array<'pptx' | 'pdf' | 'txt' | 'video' | 'jira' | 'confluence' | 'image'>;
+    outputs: Array<'pptx' | 'pdf' | 'txt' | 'video'>;
+    /**
+     * Optional Webhook configuration for job status callbacks.
+     */
     webhook?: {
         /**
-         * Callback URL to receive job status updates.
+         * Endpoint to receive POST updates about job status.
          */
         url?: string;
         /**
-         * Identifier for a managed secret used to sign webhook payloads.
+         * Identifier of a secret (e.g., HMAC key) to sign webhook payloads for verification.
          */
         secretId?: string;
     };

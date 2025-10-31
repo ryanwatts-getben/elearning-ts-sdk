@@ -1,26 +1,32 @@
 export type CreateCurriculumRequest = {
     /**
-     * Curriculum title displayed to learners.
+     * Title of the curriculum.
      */
     title: string;
+    /**
+     * List of modules in the curriculum.
+     */
     modules: Array<{
         /**
-         * Module title.
+         * Title of the module.
          */
         title: string;
+        /**
+         * Lessons within the module.
+         */
         lessons: Array<{
             /**
-             * Lesson title.
+             * Title of the lesson.
              */
             title?: string;
             /**
-             * Lesson content, markdown or plain text.
+             * Content of the lesson (plain text or Markdown).
              */
             content?: string;
         }>;
     }>;
     /**
-     * Free-form metadata for internal organization or search.
+     * Arbitrary metadata key/value pairs for the curriculum.
      */
     metadata?: Record<string, any>;
 };

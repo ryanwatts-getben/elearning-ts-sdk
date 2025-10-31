@@ -1,22 +1,22 @@
 export type RegisterSourceRequest = {
     /**
-     * Identifier returned by the upload creation step.
+     * The `sourceId` originally returned by the upload creation. This should include the client prefix (e.g., `ci_12345/uploads/filename.ext`).
      */
     sourceId: string;
     /**
-     * File name override if different from the upload step.
+     * Optional override for the file name (if different from initial upload metadata).
      */
     filename?: string;
     /**
-     * Media type override if different from the upload step.
+     * Optional override for MIME type.
      */
     mimeType?: string;
     /**
-     * File size override if different from the upload step.
+     * Optional override for file size in bytes.
      */
     sizeBytes?: number;
     /**
-     * Hex-encoded SHA-256 digest. Should match the uploaded object.
+     * Optional override for the SHA-256 hash (should match the file content if provided).
      */
     sha256?: string;
 };

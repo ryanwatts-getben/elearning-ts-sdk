@@ -58,6 +58,7 @@ export class IngestService {
      */
     public static registerSource(
         requestBody: RegisterSourceRequest,
+        idempotencyKey?: string,
     ): CancelablePromise<RegisterSourceResponse> {
         return __request(OpenAPI, {
             method: 'POST',

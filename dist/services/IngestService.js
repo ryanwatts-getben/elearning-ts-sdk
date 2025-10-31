@@ -44,7 +44,7 @@ export class IngestService {
      * @returns RegisterSourceResponse Created
      * @throws ApiError
      */
-    static registerSource(requestBody) {
+    static registerSource(requestBody, idempotencyKey) {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/v1/ingest/sources',

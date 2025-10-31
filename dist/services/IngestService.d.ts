@@ -30,5 +30,5 @@ export declare class IngestService {
      * @returns RegisterSourceResponse Created
      * @throws ApiError
      */
-    static registerSource(requestBody: RegisterSourceRequest): CancelablePromise<RegisterSourceResponse>;
+    static registerSource(requestBody: RegisterSourceRequest, idempotencyKey?: string): CancelablePromise<RegisterSourceResponse>;
 }

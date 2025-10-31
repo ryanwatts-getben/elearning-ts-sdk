@@ -2,40 +2,38 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class AuthService {
     /**
-     * Start Google OAuth (Authorization Code + PKCE)
-     * Redirects to Google with PKCE. Stores transient state and code_verifier in secure cookies.
-     * @returns void
+     * OpenID Connect discovery metadata
+     * Returns OAuth2/OIDC configuration metadata, including issuer, authorization, token, and JWKS endpoints, supported scopes, and other capabilities.
+     * @returns any OIDC discovery document
      * @throws ApiError
      */
-    static oauthAuthorize() {
+    static oidcDiscovery() {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/auth/authorize',
-            errors: {
-                302: `Redirect to Google`,
-            },
+            url: '/.well-known/openid-configuration',
         });
     }
     /**
-     * OAuth callback handler (Google)
-     * Verifies state, exchanges code with Google, mints first‑party access/refresh tokens.
-     * @returns void
+     * JSON Web Key Set (JWKS)
+     * Returns the public JSON Web Key Set. These keys are used to verify JWT signatures (e.g., access tokens).  The keys rotate periodically; cache accordingly (`Cache-Control: max-age=300`).
+     * @returns any JSON Web Key set
      * @throws ApiError
      */
-    static oauthCallbackGoogle() {
+    static getJwks() {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/auth/callback/google',
-            errors: {
-                302: `Redirect to app`,
-            },
+            url: '/.well-known/jwks.json',
         });
     }
     /**
-     * OAuth 2.0 token endpoint
-     * Issues first‑party access tokens. Supports refresh_token and client_credentials grants.
+     * OAuth2 token issuance
+     * Token endpoint for exchanging credentials for tokens. Supports:
+     * - **Authorization Code (with PKCE)** – Exchange a code (and code_verifier) for an access token (and refresh token).
+     * - **Refresh Token** – Exchange a refresh token for a new access token (rotating refresh tokens if applicable).
+     * - **Client Credentials** – Obtain an access token directly using a client’s ID and secret.
+     * The response is a JSON object containing the token and related fields.
      * @param formData
-     * @returns any Token response
+     * @returns any Successful token response
      * @throws ApiError
      */
     static oauthToken(formData) {
@@ -45,27 +43,9 @@ export class AuthService {
             formData: formData,
             mediaType: 'application/x-www-form-urlencoded',
             errors: {
-                400: `RFC7807 Problem Details`,
-                401: `RFC7807 Problem Details`,
+                400: `Error response (Problem Details)`,
+                401: `Error response (Problem Details)`,
                 429: `Rate limit exceeded`,
-            },
-        });
-    }
-    /**
-     * Revoke refresh token
-     * Revokes a refresh token; subsequent use fails.
-     * @param formData
-     * @returns any Revoked
-     * @throws ApiError
-     */
-    static oauthRevoke(formData) {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/oauth2/revoke',
-            formData: formData,
-            mediaType: 'application/x-www-form-urlencoded',
-            errors: {
-                400: `RFC7807 Problem Details`,
             },
         });
     }

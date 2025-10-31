@@ -37,6 +37,8 @@ import type { ProcessSubjectRequest } from './models/ProcessSubjectRequest';
 import type { Job } from './models/Job';
 import type { ArtifactList } from './models/ArtifactList';
 import type { ArtifactLink } from './models/ArtifactLink';
+import { SubjectsService } from './services/SubjectsService';
+import { ExportsService } from './services/ExportsService';
 
 export interface ElearningApiClientConfig {
   /** Base URL for the API (e.g., 'https://app.genixsuite.com') */
@@ -90,12 +92,14 @@ export class ElearningApiClient {
    * Register a previously uploaded object as a Source for processing
    * 
    * @param request - Source registration details
+   * @param idempotencyKey - Optional idempotency key for safe retries
    * @returns Registered source details with AV status
    */
   async registerSource(
-    request: RegisterSourceRequest
+    request: RegisterSourceRequest,
+    idempotencyKey?: string
   ): Promise<RegisterSourceResponse> {
-    return IngestService.registerSource(request);
+    return IngestService.registerSource(request, idempotencyKey);
   }
 
   /**
@@ -119,7 +123,7 @@ export class ElearningApiClient {
     request: ProcessSubjectRequest,
     idempotencyKey?: string
   ): Promise<JobAccepted> {
-    return JobsService.processSubject(request, idempotencyKey);
+    return SubjectsService.processSubject(request, idempotencyKey);
   }
 
   /**
@@ -147,7 +151,7 @@ export class ElearningApiClient {
     subjectId?: string;
     options?: { template?: any; includeImages?: boolean; theme?: any };
   }): Promise<JobAccepted> {
-    return JobsService.createExport(request as CreateExportRequest);
+    return ExportsService.createExport(request as CreateExportRequest);
   }
 
   /**
@@ -157,17 +161,16 @@ export class ElearningApiClient {
    * @returns Job status, progress, stage, and artifacts
    */
   async getJob(jobId: string): Promise<Job> {
-    return JobsService.getJob(jobId);
+    return JobsService.getJobStatus(jobId);
   }
 
   /**
    * Request cancellation of a queued or running job
    * 
    * @param jobId - Job identifier to cancel
-   * @returns Correlation ID for the cancellation request
    */
-  async cancelJob(jobId: string): Promise<string> {
-    return JobsService.cancelJob(jobId);
+  async cancelJob(jobId: string, idempotencyKey?: string): Promise<string> {
+    return JobsService.cancelJob(jobId, idempotencyKey);
   }
 
   /**
@@ -176,8 +179,8 @@ export class ElearningApiClient {
    * @param jobId - Job identifier
    * @returns List of artifacts with metadata
    */
-  async listJobArtifacts(jobId: string): Promise<ArtifactList> {
-    return JobsService.listArtifacts(jobId);
+  async listJobArtifacts(jobId: string, ifNoneMatch?: string): Promise<ArtifactList> {
+    return JobsService.listJobArtifacts(jobId, ifNoneMatch);
   }
 
   /**
@@ -187,7 +190,7 @@ export class ElearningApiClient {
    * @returns Download URL and expiration time
    */
   async getArtifact(artifactId: string): Promise<ArtifactLink> {
-    return ArtifactsService.getArtifact(artifactId);
+    return ArtifactsService.getArtifactLink(artifactId);
   }
 }
 
